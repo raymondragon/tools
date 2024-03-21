@@ -20,7 +20,7 @@ func main() {
         flag.Usage()
         log.Fatalf("[ERRO] %v", "Invalid Flag(s)")
     }
-    log.Printf("[INFO] %v --[%v]--> %v", *scanDir, *fileExt, *tempDir)
+    log.Printf("[INFO] %v <-> [*%v] --> %v", *scanDir, *fileExt, *tempDir)
     for {
         moveTempFiles(*fileExt, *scanDir, *tempDir)
         time.Sleep(1 * time.Hour)
