@@ -10,27 +10,28 @@ import (
 
 var (
     fileExt = flag.String("e", "", "File Extension")
-    mainDir = flag.String("m", "", "Main Directory")
+    scanDir = flag.String("s", "", "Scan Directory")
     tempDir = flag.String("t", "", "Temp Directory")
 )
 
 func main() {
     flag.Parse()
-    if *mainDir == "" || *tempDir == "" || *fileExt == "" {
+    if *fileExt == "" || *scanDir == "" || *tempDir == "" {
         flag.Usage()
         log.Fatalf("[ERRO] %v", "Invalid Flag(s)")
     }
+    log.Printf("[INFO] %v --[%v]--> %v", *scanDir, *fileExt, *tempDir)
     for {
-        moveTempFiles(*mainDir, *tempDir, *fileExt)
+        moveTempFiles(*fileExt, *scanDir, *tempDir)
         time.Sleep(1 * time.Hour)
     }
 }
 
-func moveTempFiles(directory, tempDirectory, fileExt string) {
-    if err := os.MkdirAll(tempDirectory, os.ModePerm); err != nil {
+func moveTempFiles(fileExt, scanDir, tempDir string) {
+    if err := os.MkdirAll(tempDir, os.ModePerm); err != nil {
         log.Fatalf("[ERRO] %v", err)
     }
-    walkErr := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+    if walkErr := filepath.Walk(scanDir, func(path string, info os.FileInfo, err error) error {
         if err != nil {
             return err
         }
@@ -39,14 +40,13 @@ func moveTempFiles(directory, tempDirectory, fileExt string) {
         }
         if filepath.Ext(info.Name()) == fileExt {
             oldPath := path
-            newPath := filepath.Join(tempDirectory, info.Name())
+            newPath := filepath.Join(tempDir, info.Name())
             if err := os.Rename(oldPath, newPath); err != nil {
                 return err
             }
         }
         return nil
-    })
-    if walkErr != nil {
+    }); walkErr != nil {
         log.Fatalf("[ERRO] %v", walkErr)
     }
 }
