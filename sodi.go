@@ -30,10 +30,9 @@ func moveTempFiles(directory, tempDirectory, fileExt string) {
     if err := os.MkdirAll(tempDirectory, os.ModePerm); err != nil {
         log.Fatalf("[ERRO] %v", err)
     }
-    err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+    walkErr := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
         if err != nil {
-            log.Printf("[WARN] %v", err)
-            return nil
+            return err
         }
         if info.IsDir() {
             return nil
@@ -42,12 +41,12 @@ func moveTempFiles(directory, tempDirectory, fileExt string) {
             oldPath := path
             newPath := filepath.Join(tempDirectory, info.Name())
             if err := os.Rename(oldPath, newPath); err != nil {
-                log.Printf("[WARN] %v", err)
+                return err
             }
         }
         return nil
     })
-    if err != nil {
-        log.Fatalf("[ERRO] %v", err)
+    if walkErr != nil {
+        log.Fatalf("[ERRO] %v", walkErr)
     }
 }
