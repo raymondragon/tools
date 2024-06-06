@@ -23,7 +23,7 @@ func main() {
     log.Printf("[INFO] %v --> %v", *sourceDir, *targetDir)
     for {
         backupFiles(*sourceDir, *targetDir)
-        time.Sleep(1 * time.Hour)
+        time.Sleep(24 * time.Hour)
     }
 }
 
