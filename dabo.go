@@ -1,14 +1,11 @@
 package main
 
 import (
-    "crypto/md5"
     "flag"
-    "fmt"
     "io"
     "log"
     "os"
     "path/filepath"
-    "strings"
     "time"
 )
 
@@ -34,82 +31,50 @@ func backupFiles(sourceDir, targetDir string) {
     if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
         log.Fatalf("[ERRO] %v", err)
     }
-    filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
-        if err != nil || info.IsDir() {
-            return err
-        }
-        sourcePath := path
-        targetPath := filepath.Join(targetDir, info.Name())
-        return copyFileWithUniqueName(sourcePath, targetPath)
-    })
-}
-
-func copyFileWithUniqueName(sourcePath, targetPath string) error {
-    if _, err := os.Stat(targetPath); err == nil {
-        same, err := compareFiles(sourcePath, targetPath)
+    if walkErr := filepath.Walk(sourceDir, func(path string, info os.FileInfo, err error) error {
         if err != nil {
             return err
         }
-        if same {
+        if info.IsDir() {
             return nil
         }
-        targetPath = getUniqueFileName(targetPath)
-    }
-    return copyFile(sourcePath, targetPath)
-}
-
-func getUniqueFileName(filePath string) string {
-    ext := filepath.Ext(filePath)
-    base := strings.TrimSuffix(filePath, ext)
-    for i := 1; ; i++ {
-        newPath := fmt.Sprintf("%s-%d%s", base, i, ext)
-        if _, err := os.Stat(newPath); os.IsNotExist(err) {
-            return newPath
+        relPath, err := filepath.Rel(sourceDir, path)
+        if err != nil {
+            return err
         }
+        targetPath := filepath.Join(targetDir, relPath)
+        if err := os.MkdirAll(filepath.Dir(targetPath), os.ModePerm); err != nil {
+            return err
+        }
+        if err := copyFile(path, targetPath); err != nil {
+            return err
+        }
+        return nil
+    }); walkErr != nil {
+        log.Fatalf("[ERRO] %v", walkErr)
     }
 }
 
-func compareFiles(file1, file2 string) (bool, error) {
-    hash1, err := getFileHash(file1)
-    if err != nil {
-        return false, err
-    }
-    hash2, err := getFileHash(file2)
-    if err != nil {
-        return false, err
-    }
-    return hash1 == hash2, nil
-}
-
-func getFileHash(filePath string) (string, error) {
-    file, err := os.Open(filePath)
-    if err != nil {
-        return "", err
-    }
-    defer file.Close()
-
-    hash := md5.New()
-    if _, err := io.Copy(hash, file); err != nil {
-        return "", err
-    }
-    return fmt.Sprintf("%x", hash.Sum(nil)), nil
-}
-
-func copyFile(sourcePath, targetPath string) error {
-    sourceFile, err := os.Open(sourcePath)
+func copyFile(src, dest string) error {
+    srcFile, err := os.Open(src)
     if err != nil {
         return err
     }
-    defer sourceFile.Close()
+    defer srcFile.Close()
 
-    targetFile, err := os.Create(targetPath)
+    destFile, err := os.Create(dest)
     if err != nil {
         return err
     }
-    defer targetFile.Close()
+    defer destFile.Close()
 
-    if _, err := io.Copy(targetFile, sourceFile); err != nil {
+    if _, err := io.Copy(destFile, srcFile); err != nil {
         return err
     }
-    return targetFile.Sync()
+
+    if err := destFile.Sync(); err != nil {
+        return err
+    }
+
+    return nil
 }
