@@ -23,7 +23,7 @@ func main() {
         flag.Usage()
         log.Fatalf("[ERRO] %v", "Invalid Flag(s)")
     }
-    log.Printf("[INFO] Scanning %v and backing up to %v", *sourceDir, *targetDir)
+    log.Printf("[INFO] %v --> %v", *sourceDir, *targetDir)
     for {
         backupFiles(*sourceDir, *targetDir)
         time.Sleep(1 * time.Hour)
@@ -51,7 +51,6 @@ func copyFileWithUniqueName(sourcePath, targetPath string) error {
             return err
         }
         if same {
-            log.Printf("[INFO] %v and %v are identical, skipping copy", sourcePath, targetPath)
             return nil
         }
         targetPath = getUniqueFileName(targetPath)
