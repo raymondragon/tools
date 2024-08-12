@@ -3,6 +3,7 @@ package main
 import (
     "log"
     "net/url"
+    "net/http"
     "os"
 
     "github.com/raymondragon/golib"
@@ -19,7 +20,7 @@ func main() {
     }
     webdavHandler := golib.WebdavHandler(parsedURL.Fragment, parsedURL.Path)
     log.Printf("[INFO] %v", rawURL)
-    if err := golib.ServeHTTP(parsedURL.Host, webdavHandler); err != nil {
+    if err := http.ListenAndServe(parsedURL.Host, webdavHandler); err != nil {
         log.Fatalf("[ERRO] %v", err)
     }
 }
